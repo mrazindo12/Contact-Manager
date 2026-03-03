@@ -1,36 +1,89 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Contact Manager
+
+A professional, production-ready Contact Management application built with Next.js, TypeScript, and Tailwind CSS.
+
+## Features
+
+- **Contact Management**: Create, view, edit, and delete contacts
+- **Rich Contact Details**: Store name, email, address, company, job title, and notes
+- **Persistent Storage**: All data is stored in browser localStorage - survives page refreshes
+- **Global Search**: Search across all contact fields in real-time
+- **Advanced Filtering**: Filter by company and job title
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **Professional UI**: Clean, enterprise-grade interface with subtle feedback
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
+
+- Node.js 18+ 
+- npm or yarn
+
+### Installation
+
+```bash
+cd contact-manager
+npm install
+```
+
+### Development
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Production Build
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run build
+npm start
+```
 
-## Learn More
+## Tech Stack
 
-To learn more about Next.js, take a look at the following resources:
+- **Framework**: Next.js 14+ (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **State Management**: React hooks + localStorage
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Data Model
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+```typescript
+interface Contact {
+  id: string;
+  fullName: string;
+  email: string;
+  address: string;
+  company: string;
+  jobTitle: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+```
 
-## Deploy on Vercel
+## Architecture
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```
+src/
+├── app/              # Next.js pages
+├── components/
+│   ├── ui/          # Reusable UI components
+│   └── contacts/    # Contact-specific components
+├── hooks/           # Custom React hooks
+├── lib/             # Storage utilities
+└── types/           # TypeScript definitions
+```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Limitations
+
+- Data is stored only in the browser's localStorage
+- No cross-device synchronization
+- Clearing browser data will remove all contacts
+- No import/export functionality (manual data entry only)
+
+## License
+
+MIT
