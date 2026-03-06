@@ -153,3 +153,4 @@ export function mergeContacts(targetId: string, newData: ContactInput): Contact 
   localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
   return merged;
 }
+

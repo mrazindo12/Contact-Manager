@@ -14,3 +14,4 @@ export interface Contact {
 }
 
 export type ContactInput = Omit<Contact, 'id' | 'createdAt' | 'updatedAt'>;
+

@@ -175,3 +175,4 @@ export function useFilteredContacts(contacts: Contact[]): UseFilteredContactsRet
     resetFilters,
   };
 }
+
