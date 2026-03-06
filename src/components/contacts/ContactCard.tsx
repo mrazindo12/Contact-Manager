@@ -135,3 +135,4 @@ export function ContactCard({ contact, onEdit, onDelete, onToggleFavorite }: Con
     </div>
   );
 }
+
