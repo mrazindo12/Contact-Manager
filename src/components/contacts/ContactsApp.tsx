@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { Contact, ContactInput } from '@/types/contact';
+import { checkDuplicates, mergeContacts, DuplicateMatch } from '@/lib/storage';
 import { useContacts, useFilteredContacts } from '@/hooks/useContacts';
 import { useToast } from '@/components/ui/Toast';
 import { Modal } from '@/components/ui/Modal';
@@ -12,9 +13,10 @@ import { EmptyState } from './EmptyState';
 import { Button } from '@/components/ui/Button';
 import { SettingsView } from './SettingsView';
 import { GroupsView } from './GroupsView';
+import { DuplicateContactDialog } from './DuplicateContactDialog';
 
 export function ContactsApp() {
-  const { contacts, loading, addContact, editContact, removeContact, toggleFavorite } = useContacts();
+  const { contacts, loading, addContact, editContact, removeContact, toggleFavorite, refreshContacts } = useContacts();
   const {
     filteredContacts,
     filters,
@@ -31,6 +33,11 @@ export function ContactsApp() {
   const [editingContact, setEditingContact] = useState<Contact | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState(false);
+
+  // Duplicate detection state
+  const [duplicateDialogOpen, setDuplicateDialogOpen] = useState(false);
+  const [pendingContactData, setPendingContactData] = useState<ContactInput | null>(null);
+  const [duplicateMatches, setDuplicateMatches] = useState<DuplicateMatch[]>([]);
 
   // Stats
   const totalContacts = contacts.length;
@@ -62,15 +69,70 @@ export function ContactsApp() {
 
   const handleSubmit = useCallback((data: ContactInput) => {
     if (editingContact) {
+      // When editing, skip duplicate check for the contact being edited
+      const dupes = checkDuplicates(data, editingContact.id);
+      if (dupes.length > 0) {
+        setPendingContactData(data);
+        setDuplicateMatches(dupes);
+        setDuplicateDialogOpen(true);
+        return;
+      }
       editContact(editingContact.id, data);
       showToast('Contact updated successfully', 'success');
+      setModalOpen(false);
+      setEditingContact(null);
     } else {
+      const dupes = checkDuplicates(data);
+      if (dupes.length > 0) {
+        setPendingContactData(data);
+        setDuplicateMatches(dupes);
+        setDuplicateDialogOpen(true);
+        return;
+      }
       addContact(data);
       showToast('Contact added successfully', 'success');
+      setModalOpen(false);
+      setEditingContact(null);
     }
-    setModalOpen(false);
-    setEditingContact(null);
   }, [editingContact, editContact, addContact, showToast]);
+
+  const handleDuplicateMerge = useCallback((targetContact: Contact) => {
+    if (!pendingContactData) return;
+    const merged = mergeContacts(targetContact.id, pendingContactData);
+    if (merged) {
+      // Refresh contacts list after merge
+      refreshContacts();
+      showToast(`Merged with ${targetContact.fullName}`, 'success');
+    }
+    setDuplicateDialogOpen(false);
+    setModalOpen(false);
+    setPendingContactData(null);
+    setDuplicateMatches([]);
+    setEditingContact(null);
+  }, [pendingContactData, refreshContacts, showToast]);
+
+  const handleDuplicateCreateAnyway = useCallback(() => {
+    if (!pendingContactData) return;
+    if (editingContact) {
+      editContact(editingContact.id, pendingContactData);
+      showToast('Contact updated successfully', 'success');
+    } else {
+      addContact(pendingContactData);
+      showToast('Contact added successfully', 'success');
+    }
+    setDuplicateDialogOpen(false);
+    setModalOpen(false);
+    setPendingContactData(null);
+    setDuplicateMatches([]);
+    setEditingContact(null);
+  }, [pendingContactData, editingContact, editContact, addContact, showToast]);
+
+  const handleDuplicateCancel = useCallback(() => {
+    setDuplicateDialogOpen(false);
+    setPendingContactData(null);
+    setDuplicateMatches([]);
+    // Keep the form modal open so user can correct their input
+  }, []);
 
   const handleDeleteClick = useCallback((id: string) => {
     setDeleteConfirmId(id);
@@ -291,6 +353,23 @@ export function ContactsApp() {
             </Button>
           </div>
         </div>
+      </Modal>
+
+      <Modal
+        isOpen={duplicateDialogOpen}
+        onClose={handleDuplicateCancel}
+        title="Duplicate Contact Found"
+        size="md"
+      >
+        {pendingContactData && duplicateMatches.length > 0 && (
+          <DuplicateContactDialog
+            duplicates={duplicateMatches}
+            newContactData={pendingContactData}
+            onMerge={handleDuplicateMerge}
+            onCreateAnyway={handleDuplicateCreateAnyway}
+            onCancel={handleDuplicateCancel}
+          />
+        )}
       </Modal>
     </div>
   );

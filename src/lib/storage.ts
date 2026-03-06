@@ -81,3 +81,75 @@ export function getContactById(id: string): Contact | null {
   const contacts = getContacts();
   return contacts.find(c => c.id === id) || null;
 }
+
+export interface DuplicateMatch {
+  contact: Contact;
+  matchedOn: ('email' | 'phone')[];
+}
+
+export function checkDuplicates(input: ContactInput, excludeId?: string): DuplicateMatch[] {
+  const contacts = getContacts();
+  const results: DuplicateMatch[] = [];
+
+  for (const contact of contacts) {
+    if (excludeId && contact.id === excludeId) continue;
+
+    const matchedOn: ('email' | 'phone')[] = [];
+
+    if (
+      input.email &&
+      input.email.trim() !== '' &&
+      contact.email &&
+      contact.email.trim().toLowerCase() === input.email.trim().toLowerCase()
+    ) {
+      matchedOn.push('email');
+    }
+
+    if (
+      input.phone &&
+      input.phone.trim() !== '' &&
+      contact.phone &&
+      contact.phone.replace(/\D/g, '') === input.phone.replace(/\D/g, '') &&
+      contact.phone.replace(/\D/g, '').length > 0
+    ) {
+      matchedOn.push('phone');
+    }
+
+    if (matchedOn.length > 0) {
+      results.push({ contact, matchedOn });
+    }
+  }
+
+  return results;
+}
+
+export function mergeContacts(targetId: string, newData: ContactInput): Contact | null {
+  const contacts = getContacts();
+  const index = contacts.findIndex(c => c.id === targetId);
+  if (index === -1) return null;
+
+  const existing = contacts[index];
+
+  // Merge strategy: prefer new non-empty values, keep existing if new is empty
+  const merged: Contact = {
+    ...existing,
+    fullName: newData.fullName.trim() || existing.fullName,
+    email: newData.email?.trim() || existing.email,
+    phone: newData.phone?.trim() || existing.phone,
+    address: newData.address?.trim() || existing.address,
+    company: newData.company?.trim() || existing.company,
+    jobTitle: newData.jobTitle?.trim() || existing.jobTitle,
+    notes: newData.notes?.trim()
+      ? existing.notes
+        ? `${existing.notes}\n${newData.notes.trim()}`
+        : newData.notes.trim()
+      : existing.notes,
+    isFavorite: newData.isFavorite || existing.isFavorite,
+    groups: Array.from(new Set([...existing.groups, ...(newData.groups || [])])),
+    updatedAt: new Date().toISOString(),
+  };
+
+  contacts[index] = merged;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(contacts));
+  return merged;
+}
